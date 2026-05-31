@@ -16,16 +16,38 @@ import {
 export function ContactForm() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setIsSubmitting(true)
+    setError(null)
 
-    // Simulate form submission
-    await new Promise((resolve) => setTimeout(resolve, 1000))
+    const formData = new FormData(e.currentTarget)
+    const data = {
+      name: formData.get("name"),
+      email: formData.get("email"),
+      subject: formData.get("subject"),
+      message: formData.get("message"),
+    }
 
-    setIsSubmitting(false)
-    setIsSubmitted(true)
+    try {
+      const response = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to send message")
+      }
+
+      setIsSubmitted(true)
+    } catch {
+      setError("Something went wrong. Please try again.")
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   if (isSubmitted) {
@@ -68,6 +90,11 @@ export function ContactForm() {
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+          {error && (
+            <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+              {error}
+            </div>
+          )}
           <div className="flex flex-col gap-2">
             <Label htmlFor="name">Name</Label>
             <Input
